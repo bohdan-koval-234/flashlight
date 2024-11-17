@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
-
 import 'package:flutter/services.dart';
-import 'package:flashlight/flashlight.dart';
+import 'package:flashlight/iot_flashlight_plugin.dart';
 
 void main() {
   runApp(const MyApp());
@@ -17,7 +16,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
-  final _flashlightPlugin = Flashlight();
+  final _flashlightPlugin = IotFlashlightPlugin();
 
   @override
   void initState() {
@@ -25,21 +24,14 @@ class _MyAppState extends State<MyApp> {
     initPlatformState();
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
   Future<void> initPlatformState() async {
     String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
     try {
-      platformVersion =
-          await _flashlightPlugin.getPlatformVersion() ?? 'Unknown platform version';
+      platformVersion = 'Platform: Android';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
 
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
     if (!mounted) return;
 
     setState(() {
@@ -52,10 +44,36 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(
-          title: const Text('Plugin example app'),
+          title: const Text('Flashlight Example App'),
         ),
         body: Center(
-          child: Text('Running on: $_platformVersion\n'),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('Running on: $_platformVersion\n'),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    bool? isOn = await IotFlashlightPlugin.toggleFlashlight();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                          isOn == true
+                              ? 'Flashlight is ON'
+                              : 'Flashlight is OFF',
+                        ),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
+                },
+                child: const Text('Toggle Flashlight'),
+              ),
+            ],
+          ),
         ),
       ),
     );
